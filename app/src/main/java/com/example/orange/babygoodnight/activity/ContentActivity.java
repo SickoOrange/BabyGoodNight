@@ -47,9 +47,9 @@ public class ContentActivity extends AppCompatActivity {
             @Override
             public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
                 if (Math.abs(verticalOffset) >= appBarLayout.getHeight() / 2) {
-                    collapsingToolbarLayout.setTitle("倾耳倾听，细心倾听您的宝贝");
+                    collapsingToolbarLayout.setTitle("侧耳倾听，细心聆听您的宝贝");
                 } else {
-                    collapsingToolbarLayout.setTitle("倾耳倾听，细心倾听您的宝贝 ");
+                    collapsingToolbarLayout.setTitle("侧耳倾听，细心聆听您的宝贝 ");
                 }
             }
         });
