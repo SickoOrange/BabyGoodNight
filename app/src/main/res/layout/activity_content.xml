@@ -58,7 +58,7 @@
                 app:theme="@style/ThemeOverlay.AppCompat.Dark"
                 >
 
-            </android.support.v7.widget.Toolbar>>
+            </android.support.v7.widget.Toolbar>
 
 
         </android.support.design.widget.CollapsingToolbarLayout>

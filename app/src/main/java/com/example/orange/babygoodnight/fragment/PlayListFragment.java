@@ -1,19 +1,26 @@
 package com.example.orange.babygoodnight.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.orange.babygoodnight.R;
+import com.example.orange.babygoodnight.activity.ContentActivity;
+import com.example.orange.babygoodnight.activity.PlayMusicActivity;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 /**
  * Created by Orange on 2017/1/3.
@@ -31,6 +38,7 @@ public class PlayListFragment extends Fragment {
             view = inflater.inflate(R.layout.playlist_fragment_layout, container, false);
             RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
             recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
             initData();
             recyclerView.setAdapter(new MyViewAdapter());
             return view;
@@ -46,40 +54,77 @@ public class PlayListFragment extends Fragment {
         }
     }
 
+
     class MyViewAdapter extends RecyclerView.Adapter<MyLittleViewHolder> {
 
 
         @Override
         public MyLittleViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             MyLittleViewHolder myLittleViewHolder = new MyLittleViewHolder(LayoutInflater.from
-                    (getContext()).inflate(R.layout.playlist_item, parent, false));
+                    (getContext()).inflate(R.layout.song_item, parent, false));
             return myLittleViewHolder;
         }
 
         @Override
         public void onBindViewHolder(MyLittleViewHolder holder, int position) {
-            holder.playlist_item_tv.setText(mDatas.get(position));
+            holder.song_Title.setText(ContentActivity.songBeenList.get(position).getTitle());
+            holder.song_Description.setText(ContentActivity.songBeenList.get(position)
+                    .getDescription());
+            holder.song_imageView.setImageResource(ContentActivity.songBeenList.get(position)
+                    .getImageUri());
 
         }
 
         @Override
         public int getItemCount() {
-            return mDatas.size();
+            return ContentActivity.songBeenList.size();
         }
     }
 
     private class MyLittleViewHolder extends RecyclerView.ViewHolder {
-        TextView playlist_item_tv;
+        TextView song_Title;
+        TextView song_Description;
+        LinearLayout song_root;
+        CircleImageView song_imageView;
 
         public MyLittleViewHolder(View itemView) {
             super(itemView);
-            playlist_item_tv = (TextView) itemView.findViewById(R.id.playlist_item_tv);
-            playlist_item_tv.setOnClickListener(new View.OnClickListener() {
+            song_Title = (TextView) itemView.findViewById(R.id.song_Title);
+            song_Description = (TextView) itemView.findViewById(R.id.song_Description);
+            song_root = (LinearLayout) itemView.findViewById(R.id.song_root);
+            song_imageView = (CircleImageView) itemView.findViewById(R.id.song_circleImage);
+            //给Item整个设置监听事件
+            // TODO: 2017/1/8 给item设置点击效果
+            song_root.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    System.out.println("ssssss");
+
+                    //判断之前的播放页面是否存在 如果存在则杀死掉 同时关掉service正在播放的歌曲
+                    Intent hasActivity=new Intent();
+                    hasActivity.setClassName(getContext().getPackageName(),"PlayMusicActivity");
+                    if (getContext().getPackageManager().resolveActivity(hasActivity,0)==null) {
+                        Log.e("A","不存在这个activity");
+                    }else {
+                        Log.e("A","存在这个activity");
+                    }
+
+
+                    int position = getAdapterPosition();
+                    Intent intent = new Intent(getActivity(), PlayMusicActivity.class);
+                    //将点击的item的position已经contentactivity传递给播放页面
+                    ContentActivity activity = (ContentActivity) getActivity();
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("index", position);
+                    bundle.putSerializable("iPlayer", activity.getiPlayer());
+                    intent.putExtras(bundle);
+
+
+                    startActivity(intent);
+
                 }
             });
+
+
         }
     }
 }
