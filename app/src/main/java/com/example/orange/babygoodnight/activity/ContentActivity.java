@@ -125,7 +125,7 @@ public class ContentActivity extends AppCompatActivity {
                     tabLayout.getTabAt(0).setText("睡眠音乐");
                     break;
                 case 1:
-                    tabLayout.getTabAt(1).setText("倾耳倾听");
+                    tabLayout.getTabAt(1).setText("侧耳倾听");
                     break;
                 case 2:
                     tabLayout.getTabAt(2).setText("睡眠追踪");

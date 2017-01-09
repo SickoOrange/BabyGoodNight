@@ -29,6 +29,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class PlayListFragment extends Fragment {
     private View view;
     private List<String> mDatas;
+    private static int songPosition=-1;
 
     @Nullable
     @Override
@@ -109,17 +110,33 @@ public class PlayListFragment extends Fragment {
                     }
 
 
-                    int position = getAdapterPosition();
                     Intent intent = new Intent(getActivity(), PlayMusicActivity.class);
-                    //将点击的item的position已经contentactivity传递给播放页面
                     ContentActivity activity = (ContentActivity) getActivity();
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("index", position);
-                    bundle.putSerializable("iPlayer", activity.getiPlayer());
-                    intent.putExtras(bundle);
+                   // Bundle bundle = new Bundle();
+                    int position = getAdapterPosition();
+                    //将点击的item的position已经contentactivity传递给播放页面
 
+                    intent.putExtra("index", position);
+                    intent.putExtra("iPlayer", activity.getiPlayer());
+
+                    System.out.println(songPosition);
+
+                    if (songPosition==-1||songPosition!=position) {
+                        //set song resource
+                        Log.e("A","1");
+                        intent.putExtra("RefreshFlag",false);
+                        //切断歌曲
+                        //activity.getiPlayer().callFinishMusic();
+                    }
+
+                    if(songPosition==position){
+                        //打开的是相同页面 恢复页面播放器
+                        intent.putExtra("RefreshFlag",true);
+                        Log.e("A","2");
+                    }
 
                     startActivity(intent);
+                    songPosition=position;
 
                 }
             });

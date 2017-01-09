@@ -20,6 +20,8 @@ import com.example.orange.babygoodnight.utils.UtilsTool;
 
 import java.io.Serializable;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class PlayMusicActivity extends AppCompatActivity implements View.OnClickListener {
 
     private Toolbar play_activity_toolbar;
@@ -28,26 +30,24 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private ImageView btn_prev;
     private ImageView btn_loop;
     private ImageView btn_listen;
-    private ImageView music_image;
+    private CircleImageView music_image;
     private ImageView music_image_wrapper;
     private TextView tv_play_time_start;
     private TextView tv_play_time_end;
-    private  static SeekBar seekBar;
-    private  static int position=0 ;
-    private  static int duration=0;
+    private static SeekBar seekBar;
+    private static int position = 0;
+    private static int duration = 0;
     private MyPlayServiceInterface iPlayer;
-    private  static boolean isPlaying = false;
+    private static boolean isPlaying = false;
 
-    public  static Handler handler = new Handler(new Handler.Callback() {
-
+    public static Handler handler = new Handler(new Handler.Callback() {
 
 
         @Override
-        public  boolean handleMessage(Message message) {
+        public boolean handleMessage(Message message) {
             switch (message.arg1) {
                 case 0:
                     //更新进度条
-                    Log.e("A","更新进度条handler");
                     Bundle data = message.getData();
                     int[] musicParams = data.getIntArray("params");
                     currentPosition = musicParams[0];
@@ -64,11 +64,14 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                     // seekBar.setProgress(0);
                     break;
             }
-
             return false;
         }
     });
+
     private static int currentPosition;
+    private boolean refreshIcon;
+    private int refreshCurrenturation;
+    private int refreshDuration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +79,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
         setContentView(R.layout.activity_play_music);
         UtilsTool.setStatusBar(PlayMusicActivity.this);
         Intent sourceIntent = getIntent();
-        Log.e("a","aaaaaaa");
+        Log.e("a", "aaaaaaa");
         //获取需要播放的音乐的position跟执行播放的代理
         position = sourceIntent.getIntExtra("index", -1);
         Serializable type = sourceIntent.getSerializableExtra("iPlayer");
@@ -105,14 +108,14 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
         btn_listen = (ImageView) findViewById(R.id.btn_listen);
         btn_listen.setOnClickListener(this);
 
-        music_image = (ImageView) findViewById(R.id.music_image);
+        music_image = (CircleImageView) findViewById(R.id.music_image);
         music_image_wrapper = (ImageView) findViewById(R.id.music_image_wrapper);
 
         tv_play_time_start = (TextView) findViewById(R.id.tv_play_time_start);
         tv_play_time_end = (TextView) findViewById(R.id.tv_play_time_end);
 
         seekBar = (SeekBar) findViewById(R.id.seekBar);
-        seekBar.setProgress(0);
+        //seekBar.setProgress(0);
         // seekBar.setEnabled(false);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -142,7 +145,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_play:
-                if (!isPlaying) {
+               /* if (!isPlaying) {
                     //判断是否已经播放后暂停了
                     Log.e("A",""+seekBar.getProgress());
                     if (seekBar.getProgress() > 1&&seekBar.getProgress()!=1000) {
@@ -163,6 +166,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                         // seekBar.setEnabled(true);
                         btn_play.setImageResource(R.drawable.play_btn_pause_selector);
                         // TODO: 2017/1/8 动画旋转问题， 时间同步问题
+                        music_image.setImageResource(ContentActivity.songBeenList.get(position).getImageUri());
                         UtilsTool.setMusicImageAnimation(music_image);
                         UtilsTool.setMusicImageAnimation(music_image_wrapper);
                     }
@@ -175,12 +179,30 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                     btn_play.setImageResource(R.drawable.play_btn_play_selector);
 
 
+                }*/
+                if (iPlayer.isPlaying()) {
+                    iPlayer.callPauseMusic();
+                    btn_play.setImageResource(R.drawable.play_btn_play_selector);
+                } else {
+                    if (seekBar.getProgress() >= 0 && seekBar.getProgress() < refreshDuration) {
+                        iPlayer.callSetSeekToPosition(seekBar.getProgress());
+                    }
+                    iPlayer.callPlayMusic();
+                    btn_play.setImageResource(R.drawable.play_btn_pause_selector);
                 }
 
                 break;
 
             case R.id.btn_next:
-                // TODO: 2017/1/8  
+                position+=1;
+                System.out.println("position="+position);
+                // TODO: 2017/1/8 注意歌曲越界的问题
+                Uri uri = ContentActivity.songBeenList.get(position).getUri();
+                getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
+                getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
+                iPlayer.callSetMusicSourcePath(uri);
+                iPlayer.callPlayMusic();
+                btn_play.setImageResource(R.drawable.play_btn_pause_selector);
                 break;
 
             case R.id.btn_prev:
@@ -196,7 +218,6 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                 break;
 
             case android.R.id.home:
-                System.out.println("fu ck");
                 break;
         }
 
@@ -207,8 +228,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                iPlayer.callFinishMusic();
-                isPlaying=false;
+
                 Intent intent = new Intent(PlayMusicActivity.this, ContentActivity.class);
                 startActivity(intent);
                 break;
@@ -218,7 +238,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     public void onBackPressed() {
-     moveTaskToBack(true);
+        moveTaskToBack(true);
         //super.onBackPressed();
     }
 
@@ -229,8 +249,40 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     protected void onResume() {
-        seekBar.setProgress(currentPosition);
-        seekBar.setMax(duration);
+        refreshIcon = iPlayer.isPlaying();
+
+
+        // System.out.println(refreshIcon+"  "+refreshCurrenturation+"  "+ refreshDuration);
+        boolean RefreshFlag = getIntent().getBooleanExtra("RefreshFlag", false);
+        if (RefreshFlag) {
+            //恢复界面
+            Log.e("A", "3");
+
+            getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
+            getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
+            // TODO: 2017/1/9 恢复时间标签的显示
+
+            if (refreshIcon) {
+                btn_play.setImageResource(R.drawable.play_btn_pause_selector);
+            } else {
+                btn_play.setImageResource(R.drawable.play_btn_play_selector);
+            }
+        } else {
+            //重新设置数据源 播放新的歌在button中做
+            Log.e("A", "4");
+            iPlayer.callFinishMusic();
+
+            Uri uri = ContentActivity.songBeenList.get(position).getUri();
+            getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
+            getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
+            iPlayer.callSetMusicSourcePath(uri);
+            btn_play.setImageResource(R.drawable.play_btn_play_selector);
+        }
+
+        refreshCurrenturation = iPlayer.callGetCurrentDuration();
+        refreshDuration = iPlayer.callGetDuration();
+        seekBar.setProgress(refreshCurrenturation);
+        seekBar.setMax(refreshDuration);
         super.onResume();
     }
 
@@ -238,7 +290,6 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     protected void onStop() {
         super.onStop();
     }
-
 
 
 }

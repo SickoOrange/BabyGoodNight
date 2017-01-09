@@ -21,4 +21,10 @@ public interface MyPlayServiceInterface extends Serializable {
     void callSetMusicSourcePath(Uri path);
 
     void callSetSeekToPosition(int progress);
+
+    int callGetCurrentDuration();
+
+    int callGetDuration();
+
+    boolean isPlaying();
 }

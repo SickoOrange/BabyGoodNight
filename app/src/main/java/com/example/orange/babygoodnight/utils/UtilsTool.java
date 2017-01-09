@@ -32,7 +32,7 @@ public static  void setMusicImageAnimation(View view){
 
     RotateAnimation rotateAnimation=new RotateAnimation(0f,360f,Animation.RELATIVE_TO_SELF,0.5f,Animation.RELATIVE_TO_SELF,0.5f);
     rotateAnimation.setDuration(8000);
-    rotateAnimation.setRepeatMode(Animation.RESTART);
+    rotateAnimation.setRepeatMode(-1);
     rotateAnimation.setFillAfter(true);
     view.startAnimation(rotateAnimation);
 
