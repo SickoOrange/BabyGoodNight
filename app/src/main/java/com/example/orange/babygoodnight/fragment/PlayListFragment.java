@@ -29,7 +29,8 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class PlayListFragment extends Fragment {
     private View view;
     private List<String> mDatas;
-    private static int songPosition=-1;
+    private static int songPosition = -1;
+    private RecyclerView recyclerView;
 
     @Nullable
     @Override
@@ -37,7 +38,7 @@ public class PlayListFragment extends Fragment {
             Bundle savedInstanceState) {
         if (view == null) {
             view = inflater.inflate(R.layout.playlist_fragment_layout, container, false);
-            RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+            recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
             recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
             initData();
@@ -55,6 +56,17 @@ public class PlayListFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onResume() {
+        ContentActivity contentActivity = (ContentActivity) getActivity();
+        int back_id = contentActivity.back_id;
+        if (back_id != -1) {
+            System.out.println("back_id:" + back_id);
+            // TODO: 2017/1/10 根据返回值 标记recyclerview中哪一首歌被播放?
+        }
+
+        super.onResume();
+    }
 
     class MyViewAdapter extends RecyclerView.Adapter<MyLittleViewHolder> {
 
@@ -101,18 +113,18 @@ public class PlayListFragment extends Fragment {
                 public void onClick(View view) {
 
                     //判断之前的播放页面是否存在 如果存在则杀死掉 同时关掉service正在播放的歌曲
-                    Intent hasActivity=new Intent();
-                    hasActivity.setClassName(getContext().getPackageName(),"PlayMusicActivity");
-                    if (getContext().getPackageManager().resolveActivity(hasActivity,0)==null) {
-                        Log.e("A","不存在这个activity");
-                    }else {
-                        Log.e("A","存在这个activity");
+                    Intent hasActivity = new Intent();
+                    hasActivity.setClassName(getContext().getPackageName(), "PlayMusicActivity");
+                    if (getContext().getPackageManager().resolveActivity(hasActivity, 0) == null) {
+                        Log.e("A", "不存在这个activity");
+                    } else {
+                        Log.e("A", "存在这个activity");
                     }
 
 
                     Intent intent = new Intent(getActivity(), PlayMusicActivity.class);
                     ContentActivity activity = (ContentActivity) getActivity();
-                   // Bundle bundle = new Bundle();
+                    // Bundle bundle = new Bundle();
                     int position = getAdapterPosition();
                     //将点击的item的position已经contentactivity传递给播放页面
 
@@ -121,22 +133,20 @@ public class PlayListFragment extends Fragment {
 
                     System.out.println(songPosition);
 
-                    if (songPosition==-1||songPosition!=position) {
+                    if (songPosition == -1 || songPosition != position) {
                         //set song resource
-                        Log.e("A","1");
-                        intent.putExtra("RefreshFlag",false);
-                        //切断歌曲
-                        //activity.getiPlayer().callFinishMusic();
+                        Log.e("A", "1");
+                        intent.putExtra("noRefreshFlag", true);
                     }
 
-                    if(songPosition==position){
+                    if (songPosition == position) {
                         //打开的是相同页面 恢复页面播放器
-                        intent.putExtra("RefreshFlag",true);
-                        Log.e("A","2");
+                        intent.putExtra("noRefreshFlag", false);
+                        Log.e("A", "2");
                     }
 
                     startActivity(intent);
-                    songPosition=position;
+                    songPosition = position;
 
                 }
             });

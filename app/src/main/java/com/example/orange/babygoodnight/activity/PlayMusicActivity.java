@@ -1,10 +1,14 @@
 package com.example.orange.babygoodnight.activity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.BoolRes;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -13,12 +17,14 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.orange.babygoodnight.R;
 import com.example.orange.babygoodnight.service.MyPlayServiceInterface;
 import com.example.orange.babygoodnight.utils.UtilsTool;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -31,9 +37,9 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private ImageView btn_loop;
     private ImageView btn_listen;
     private CircleImageView music_image;
-    private ImageView music_image_wrapper;
-    private TextView tv_play_time_start;
-    private TextView tv_play_time_end;
+    private  ImageView music_image_wrapper;
+    private static TextView tv_play_time_start;
+    private static TextView tv_play_time_end;
     private static SeekBar seekBar;
     private static int position = 0;
     private static int duration = 0;
@@ -55,6 +61,8 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                     //isPlaying = data.getBoolean("isPlaying");
                     seekBar.setProgress(currentPosition);
                     seekBar.setMax(duration);
+                    tv_play_time_end.setText(formatter.format(duration));
+                    tv_play_time_start.setText(formatter.format(currentPosition));
                     break;
                 case 1:
                     //音乐播放完毕自动循环
@@ -72,12 +80,17 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private boolean refreshIcon;
     private int refreshCurrenturation;
     private int refreshDuration;
+    private boolean isHomePressed;
+    //private BroadcastReceiver homeReceiver;
+    private static SimpleDateFormat formatter;
+    private boolean noRefreshFlag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_music);
         UtilsTool.setStatusBar(PlayMusicActivity.this);
+        formatter = new SimpleDateFormat("mm:ss");
         Intent sourceIntent = getIntent();
         Log.e("a", "aaaaaaa");
         //获取需要播放的音乐的position跟执行播放的代理
@@ -88,6 +101,31 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
         }
 
         initView();
+        /*if (homeReceiver == null) {
+            //解决在播放界面按下home键 在回到播放页面 歌曲暂停的Bug
+            //利用广播接受者 捕捉home键被按下的情况
+
+            homeReceiver = new BroadcastReceiver() {
+
+                private boolean homePress;
+
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action.equals(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)) {
+                        if ("homekey".equals(intent.getStringExtra("reason"))) {
+                            isHomePressed = true;
+                            System.out.println("程序按了后台按键");
+                        }
+                    }
+                }
+            };
+
+            //
+            registerReceiver(homeReceiver, new IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        }
+*/
+
     }
 
     private void initView() {
@@ -194,19 +232,40 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                 break;
 
             case R.id.btn_next:
-                position+=1;
-                System.out.println("position="+position);
+                position += 1;
+
+                System.out.println("歌position=" + position);
+                if (position> ContentActivity.songBeenList.size()-1) {
+                position=ContentActivity.songBeenList.size()-1;
+                    Toast.makeText(PlayMusicActivity.this,"已经是最后一首歌了",Toast.LENGTH_SHORT).show();
+               return;
+                }
                 // TODO: 2017/1/8 注意歌曲越界的问题
                 Uri uri = ContentActivity.songBeenList.get(position).getUri();
-                getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
-                getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
+                getSupportActionBar().setTitle(ContentActivity.songBeenList.get(position).getTitle());
+                getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(position).getDescription());
                 iPlayer.callSetMusicSourcePath(uri);
                 iPlayer.callPlayMusic();
                 btn_play.setImageResource(R.drawable.play_btn_pause_selector);
+
                 break;
 
             case R.id.btn_prev:
-                // TODO: 2017/1/8  
+                // TODO: 2017/1/8
+                position -= 1;
+                System.out.println("prevposition=" + position);
+                if (position<= -1) {
+                    Toast.makeText(PlayMusicActivity.this,"这是第一首歌了",Toast.LENGTH_SHORT).show();
+                    position=0;
+                    return;
+                }
+                Uri uri1 = ContentActivity.songBeenList.get(position).getUri();
+                getSupportActionBar().setTitle(ContentActivity.songBeenList.get(position).getTitle());
+                getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(position).getDescription());
+                iPlayer.callSetMusicSourcePath(uri1);
+                iPlayer.callPlayMusic();
+                btn_play.setImageResource(R.drawable.play_btn_pause_selector);
+
                 break;
 
             case R.id.btn_loop:
@@ -238,8 +297,13 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     public void onBackPressed() {
-        moveTaskToBack(true);
+        //moveTaskToBack(true);
         //super.onBackPressed();
+        Intent backIntent = new Intent(PlayMusicActivity.this, ContentActivity.class);
+        backIntent.putExtra("BACK_ID", position);
+        startActivity(backIntent);
+
+
     }
 
     @Override
@@ -250,11 +314,15 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     @Override
     protected void onResume() {
         refreshIcon = iPlayer.isPlaying();
-
+        refreshCurrenturation = iPlayer.callGetCurrentDuration();
+        refreshDuration = iPlayer.callGetDuration();
 
         // System.out.println(refreshIcon+"  "+refreshCurrenturation+"  "+ refreshDuration);
-        boolean RefreshFlag = getIntent().getBooleanExtra("RefreshFlag", false);
-        if (RefreshFlag) {
+        Intent  flagIntent=getIntent();
+        noRefreshFlag =flagIntent.getBooleanExtra("noRefreshFlag", false);
+        flagIntent.putExtra("noRefreshFlag", false);
+        System.out.println(noRefreshFlag);
+        if (!noRefreshFlag) {
             //恢复界面
             Log.e("A", "3");
 
@@ -262,25 +330,46 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
             getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
             // TODO: 2017/1/9 恢复时间标签的显示
 
+            //初始化Formatter的转换格式。
+
+            String currentTime = formatter.format(refreshCurrenturation);
+            String durationTime=formatter.format(refreshDuration);
+            tv_play_time_start.setText(currentTime);
+            tv_play_time_end.setText(durationTime);
+
+
+
             if (refreshIcon) {
                 btn_play.setImageResource(R.drawable.play_btn_pause_selector);
             } else {
                 btn_play.setImageResource(R.drawable.play_btn_play_selector);
             }
         } else {
-            //重新设置数据源 播放新的歌在button中做
-            Log.e("A", "4");
-            iPlayer.callFinishMusic();
+            //重新设置数据源 播放新的歌在button中做f
+            //if (!isHomePressed) {
 
-            Uri uri = ContentActivity.songBeenList.get(position).getUri();
-            getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
-            getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
-            iPlayer.callSetMusicSourcePath(uri);
-            btn_play.setImageResource(R.drawable.play_btn_play_selector);
+                Log.e("A", "4");
+                iPlayer.callFinishMusic();
+                Uri uri = ContentActivity.songBeenList.get(position).getUri();
+                getSupportActionBar().setTitle(ContentActivity.songBeenList.get(0).getTitle());
+                getSupportActionBar().setSubtitle(ContentActivity.songBeenList.get(0).getDescription());
+                iPlayer.callSetMusicSourcePath(uri);
+                btn_play.setImageResource(R.drawable.play_btn_play_selector);
+
+          /*  }else {
+                if (refreshIcon) {
+                    btn_play.setImageResource(R.drawable.play_btn_pause_selector);
+                } else {
+                    btn_play.setImageResource(R.drawable.play_btn_play_selector);
+                }
+                tv_play_time_start.setText(refreshCurrenturation);
+                tv_play_time_end.setText(refreshDuration);
+            }
+
+            isHomePressed=false;*/
         }
 
-        refreshCurrenturation = iPlayer.callGetCurrentDuration();
-        refreshDuration = iPlayer.callGetDuration();
+
         seekBar.setProgress(refreshCurrenturation);
         seekBar.setMax(refreshDuration);
         super.onResume();
@@ -291,5 +380,31 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
         super.onStop();
     }
 
+    @Override
+    public void onAttachedToWindow() {
+        System.out.println("onAttachedToWindow");
+        super.onAttachedToWindow();
+    }
 
+    @Override
+    protected void onUserLeaveHint() {
+        System.out.println("onUserLeaveHint");
+        //按下home键的时候 会执行
+        super.onUserLeaveHint();
+    }
+
+    @Override
+    protected void onDestroy() {
+      /*  if (homeReceiver != null) {
+            unregisterReceiver(homeReceiver);
+
+        }*/
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onStart() {
+
+        super.onStart();
+    }
 }

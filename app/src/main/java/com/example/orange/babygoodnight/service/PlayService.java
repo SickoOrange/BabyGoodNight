@@ -36,7 +36,7 @@ public class PlayService extends Service {
         if (myBinder != null) {
             return myBinder;
         }
-        myBinder=new MyBinder();
+        myBinder = new MyBinder();
         return myBinder;
     }
 
@@ -124,7 +124,6 @@ public class PlayService extends Service {
     }
 
 
-
     public void setMusicSourcePath(Uri uri) {
         this.uri = uri;
     }
@@ -138,7 +137,7 @@ public class PlayService extends Service {
 
         @Override
         public void callPlayMusic() {
-                playMusic();
+            playMusic();
         }
 
 
@@ -163,7 +162,7 @@ public class PlayService extends Service {
             mediaPlayer.reset();
             setMusicSourcePath(path);
             try {
-                mediaPlayer.setDataSource(getApplicationContext(),uri);
+                mediaPlayer.setDataSource(getApplicationContext(), uri);
                 mediaPlayer.prepare();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -188,11 +187,9 @@ public class PlayService extends Service {
         }
 
         @Override
-        public boolean isPlaying(){
+        public boolean isPlaying() {
             return mediaPlayer.isPlaying();
         }
-
-
     }
 
     private void finishMusic() {

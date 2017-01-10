@@ -24,6 +24,8 @@ import com.example.orange.babygoodnight.service.PlayService;
 
 import java.util.ArrayList;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 public class ContentActivity extends AppCompatActivity {
     private ArrayList<Fragment> mFragmentList = new ArrayList<>();
     private TabLayout tabLayout;
@@ -35,6 +37,8 @@ public class ContentActivity extends AppCompatActivity {
 
     //保存的音乐信息bean 列表
     public static ArrayList<SongBean> songBeenList = new ArrayList<>();
+    private CircleImageView play_status;
+    public int back_id;
 
     public MyPlayServiceInterface getiPlayer() {
         if (iPlayer != null) {
@@ -55,6 +59,12 @@ public class ContentActivity extends AppCompatActivity {
         initSongBean();
         initView();
         getWindow().setStatusBarColor(getResources().getColor(R.color.colorAccent));
+
+
+        //根据跳转回来的activity 确定目前哪一首歌曲正在播放
+        Intent intent = getIntent();
+        back_id = intent.getIntExtra("BACK_ID",-1);
+
     }
 
     private void initSongBean() {
@@ -86,6 +96,8 @@ public class ContentActivity extends AppCompatActivity {
     }
 
     private void initView() {
+       // play_status = (CircleImageView) findViewById(R.id.play_status);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         //  getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -138,7 +150,7 @@ public class ContentActivity extends AppCompatActivity {
     public class MyPlayServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            iPlayer = (PlayService.MyBinder) iBinder;
+            iPlayer = (MyPlayServiceInterface) iBinder;
             //iPlayer.callPlayMusic();
         }
 
