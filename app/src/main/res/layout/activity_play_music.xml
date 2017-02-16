@@ -127,7 +127,9 @@
                 android:textColor="@android:color/white"/>
         </LinearLayout>
 
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
+            app:civ_border_color="@android:color/white"
+            app:civ_border_width="3dp"
             android:id="@+id/music_image"
             android:layout_width="177dp"
             android:layout_height="177dp"

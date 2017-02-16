@@ -36,7 +36,7 @@ public class PlayService extends Service {
         if (myBinder != null) {
             return myBinder;
         }
-        myBinder=new MyBinder();
+        myBinder = new MyBinder();
         return myBinder;
     }
 
@@ -59,8 +59,9 @@ public class PlayService extends Service {
                 //歌曲结束
                 message.arg1 = 1;
                 PlayMusicActivity.handler.sendMessage(message);
-
-                timer.cancel();
+                if (timer != null) {
+                    timer.cancel();
+                }
             }
         });
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -123,7 +124,6 @@ public class PlayService extends Service {
     }
 
 
-
     public void setMusicSourcePath(Uri uri) {
         this.uri = uri;
     }
@@ -137,17 +137,7 @@ public class PlayService extends Service {
 
         @Override
         public void callPlayMusic() {
-            try {
-                System.out.println(".............");
-                mediaPlayer.reset();
-                mediaPlayer.setDataSource(getApplicationContext(), uri);
-                mediaPlayer.prepare();
-                playMusic();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
+            playMusic();
         }
 
 
@@ -169,7 +159,15 @@ public class PlayService extends Service {
 
         @Override
         public void callSetMusicSourcePath(Uri path) {
+            mediaPlayer.reset();
             setMusicSourcePath(path);
+            try {
+                mediaPlayer.setDataSource(getApplicationContext(), uri);
+                mediaPlayer.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
         @Override
@@ -177,13 +175,30 @@ public class PlayService extends Service {
             setSeekToPosition(progress);
 
         }
+
+        @Override
+        public int callGetCurrentDuration() {
+            return mediaPlayer.getCurrentPosition();
+        }
+
+        @Override
+        public int callGetDuration() {
+            return mediaPlayer.getDuration();
+        }
+
+        @Override
+        public boolean isPlaying() {
+            return mediaPlayer.isPlaying();
+        }
     }
 
     private void finishMusic() {
         //mediaPlayer.reset();
         mediaPlayer.stop();
         uri = null;
-        timer.cancel();
+        if (timer != null) {
+            timer.cancel();
+        }
     }
 
 }
